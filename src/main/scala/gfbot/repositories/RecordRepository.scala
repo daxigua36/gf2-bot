@@ -47,8 +47,9 @@ final private class RecordRepositoryImpl[F[_] : Async](private val collection: M
     if (records.isEmpty) {
       Async[F].unit
     } else {
-      collection.insertMany(records map gachaRec2dbRec(userIdOpt))
-      Async[F].unit
+      collection.insertMany(records map gachaRec2dbRec(userIdOpt)) flatMap { _ =>
+        Async[F].unit
+      }
     }
   }
 }

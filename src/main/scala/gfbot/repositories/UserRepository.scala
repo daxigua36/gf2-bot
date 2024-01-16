@@ -35,11 +35,11 @@ final private class UserRepositoryImpl[F[_] : Async](private val collection: Mon
     val user = User(_id = ObjectId.gen, tgId.toString, gfId, username)
     getUser(tgId) flatMap { userOpt =>
       if (userOpt.isDefined) {
-        Async[F].pure()
+        Async[F].unit
       } else {
-        collection.insertOne(user)
-        logger.use(s"Saving user $user")
-        Async[F].pure()
+        collection.insertOne(user) flatMap { _ =>
+          Async[F].unit
+        }
       }
     }
   }

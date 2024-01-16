@@ -45,6 +45,8 @@ class GachaBot(token: String, logger: Logger[IO]) {
           scenario.download(msg.chat, msg.from, magicLink)
         case command if command.startsWith("/me") =>
           scenario.myInfo(msg.chat, msg.from)
+        case command if command.startsWith("/global") =>
+          scenario.globalInfo(msg.chat)
         case command if command.startsWith("/") =>
           Scenario.done[F]
         case _ =>
