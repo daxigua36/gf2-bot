@@ -21,6 +21,8 @@ trait ScenarioService[F[_]] {
 
   def myInfo(chat: Chat, from: Option[canoe.models.User]): Scenario[F, Unit]
 
+  def globalInfo(chat: Chat): Scenario[F, Unit]
+
   def help(chat: Chat): Scenario[F, Unit]
 
   def instructions(chat: Chat, language: String): Scenario[F, Unit]
@@ -135,53 +137,99 @@ object ScenarioService {
       val token = magicLink.split("::")(1)
       val df: SimpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
 
-      val result: F[TextMessage] = gachaRepository.getAllRecords(url, token) flatMap { recordsInApi =>
-        recordRepository.getRecordsByUserToken(token) flatMap { recordsInDb =>
+      val result: F[TextMessage] = chat.send(TextContent("Import in progress...", Some(ParseMode.Markdown))) flatMap { _ =>
+        gachaRepository.getAllRecords(url, token) flatMap { recordsInApi =>
+          recordRepository.getRecordsByUserToken(token) flatMap { recordsInDb =>
 
-          val diffRecords: List[GachaRecord] =
-            if (recordsInDb.isEmpty) {
-              recordsInApi
-            } else {
-              val latestDbRecordTime = recordsInDb.maxBy(_.t).t
-              recordsInApi.filter(_.time > latestDbRecordTime)
-            }
-
-          recordRepository.insertRecords(diffRecords, token) flatMap { _ =>
-            userRepository.saveUser(from.get.id, token, from.get.username.get) flatMap { _ =>
-              val count = diffRecords.length
-
-              val tuples: List[(Item, Long, Int)] = diffRecords.sortBy(_.time).zipWithIndex map { case (r, i) =>
-                val t = (ItemRepository.heroes.getOrElse(r.item, ItemRepository.weapons.getOrElse(r.item, Item(r.item.toString, "???", 0))), r.time, i + 1)
-                if (t._1.rarity == 0) logger.use(s"MISSING ITEM $r").unsafeRunAndForget()
-                t
+            val diffRecords: List[GachaRecord] =
+              if (recordsInDb.isEmpty) {
+                recordsInApi
+              } else {
+                val latestDbRecordTime = recordsInDb.maxBy(_.t).t
+                recordsInApi.filter(_.time > latestDbRecordTime)
               }
-              logger.use(s"Imported Items $tuples").unsafeRunAndForget()
 
-              val strings = tuples.filter(t => t._1.rarity > 3) map { case (item, time, index) =>
-                val dateString = df.format(time * 1000)
-                val itemText = item.rarity match {
-                  case 5 => s"⭐*${item.enName}*⭐ (${item.cnName})"
-                  case 4 => s"*${item.enName}* (${item.cnName})"
-                  case _ => s"${item.enName}(${item.cnName})"
+            recordRepository.insertRecords(diffRecords, token) flatMap { _ =>
+              userRepository.saveUser(from.get.id, token, from.get.username.get) flatMap { _ =>
+                val count = diffRecords.length
+
+                val tuples: List[(Item, Long, Int)] = diffRecords.sortBy(_.time).zipWithIndex map { case (r, i) =>
+                  val t = (ItemRepository.heroes.getOrElse(r.item, ItemRepository.weapons.getOrElse(r.item, Item(r.item.toString, "???", 0))), r.time, i + 1)
+                  if (t._1.rarity == 0) logger.use(s"MISSING ITEM $r").unsafeRunAndForget()
+                  t
                 }
-                s"$index.".padTo(4, ' ') + itemText + " - " + dateString
+                logger.use(s"Imported Items $diffRecords").unsafeRunAndForget()
+
+                val strings = tuples.filter(t => t._1.rarity > 3) map { case (item, time, index) =>
+                  val dateString = df.format(time * 1000)
+                  val itemText = item.rarity match {
+                    case 5 => s"⭐*${item.enName}*⭐ (${item.cnName})"
+                    case 4 => s"*${item.enName}* (${item.cnName})"
+                    case _ => s"${item.enName}(${item.cnName})"
+                  }
+                  s"$index.".padTo(4, ' ') + itemText + " - " + dateString
+                }
+
+                val msg = if (count > 0) {
+                  s"""We have imported *$count* total new records.
+                     |
+                     |New higher-rank records:
+                     |${strings.mkString("\n")}
+                     |
+                     |Explore global stats by sending /global
+                     |Explore personal stats by sending /me""".stripMargin
+                } else {
+                  s"""No new summons have been found.
+                     |
+                     |Explore global stats by sending /global
+                     |Explore personal stats by sending /me""".stripMargin
+                }
+
+                chat.send(TextContent(msg, Some(ParseMode.Markdown)))
               }
-
-              val msg = s"We have imported *$count* total records.\n\nImported higher-rank records:\n${strings.mkString("\n")}"
-
-              chat.send(TextContent(msg, Some(ParseMode.Markdown)))
             }
           }
+        } recoverWith { case ex: Exception =>
+          logger.error(ex).unsafeRunAndForget()
+          chat.send(TextContent("Oops! Something failed unexpectedly...", Some(ParseMode.Markdown)))
         }
-      } recoverWith { case ex: Exception =>
-        logger.error(ex).unsafeRunAndForget()
-        chat.send(TextContent("Oops! Something failed unexpectedly...", Some(ParseMode.Markdown)))
       }
 
       for {
         _ <- Scenario.eval(result)
       } yield ()
+    }
 
+    override def globalInfo(chat: Chat): Scenario[F, Unit] = {
+      val result = recordRepository.getAllRecords flatMap { records =>
+        userRepository.getAllUsers flatMap { users =>
+          val recordCount = records.length
+          val userCount = users.length
+          val itemsMap: Map[Int, Item] = ItemRepository.weapons ++ ItemRepository.heroes
+          val fiveStarsCount = records.count(r => itemsMap(r.itemId.toInt).rarity == 5)
+          val fourStarsCount = records.count(r => itemsMap(r.itemId.toInt).rarity == 4)
+          val fiveStarsChance = BigDecimal(fiveStarsCount * 100) / recordCount
+          val fourStarsChance = BigDecimal(fourStarsCount * 100) / recordCount
+
+          val msg =
+            s"""Total Users: *$userCount*
+               |Total Summons: *$recordCount*
+               |Crystals Spent: *${recordCount * 150}*
+               |
+               |5⭐ Summons: *$fiveStarsCount*
+               |4⭐ Summons: *$fourStarsCount*
+               |5⭐ Chance: *${fiveStarsChance.setScale(2, BigDecimal.RoundingMode.HALF_UP)}%*
+               |4⭐ Chance: *${fourStarsChance.setScale(2, BigDecimal.RoundingMode.HALF_UP)}%*""".stripMargin
+          chat.send(TextContent(msg, Some(ParseMode.Markdown)))
+        }
+      } recoverWith { case ex: Exception =>
+        import cats.effect.unsafe.implicits.global
+        logger.error(ex).unsafeRunAndForget()
+        chat.send(TextContent("Oops! Something failed unexpectedly...", Some(ParseMode.Markdown)))
+      }
+      for {
+        _ <- Scenario.eval(result)
+      } yield ()
     }
   }
 }
