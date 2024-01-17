@@ -14,7 +14,7 @@ object ItemRepository {
   )
 
   val weapons: Map[Int, Item] = Map(
-    1 -> Item("SSR AK-Alfa", "游星", 5),
+    11038 -> Item("SSR AK-Alfa", "游星", 5),
     11016 -> Item("SSR Vepr-12", "猎心者", 5),
     10333 -> Item("SSR Mosin Nagant", "斯摩希克", 5),
     11047 -> Item("SSR SPAS", "梅扎露娜", 5),
