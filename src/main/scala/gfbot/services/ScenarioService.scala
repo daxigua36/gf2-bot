@@ -19,7 +19,7 @@ import java.text.SimpleDateFormat
 trait ScenarioService[F[_]] {
   def start(chat: Chat): Scenario[F, Unit]
 
-  def myInfo(chat: Chat, from: Option[canoe.models.User]): Scenario[F, Unit]
+  def myInfo(chat: Chat, from: User): Scenario[F, Unit]
 
   def globalInfo(chat: Chat): Scenario[F, Unit]
 
@@ -27,7 +27,7 @@ trait ScenarioService[F[_]] {
 
   def instructions(chat: Chat, language: String): Scenario[F, Unit]
 
-  def download(chat: Chat, from: Option[canoe.models.User], magicLink: String): Scenario[F, Unit]
+  def download(chat: Chat, from: User, magicLink: String): Scenario[F, Unit]
 }
 
 object ScenarioService {
@@ -52,14 +52,14 @@ object ScenarioService {
       } yield ()
 
 
-    override def myInfo(chat: Chat, from: Option[canoe.models.User]): Scenario[F, Unit] = {
-      val result: F[TextMessage] = userRepository.getUser(from.get.id) flatMap { userOpt =>
-        val user = userOpt.getOrElse(User(null, from.get.id.toString, "unknown", from.get.username.get))
+    override def myInfo(chat: Chat, from: User): Scenario[F, Unit] = {
+      val result: F[TextMessage] = userRepository.getUser(from.tgId.toLong) flatMap { userOpt =>
+        val user = userOpt.getOrElse(from)
         recordRepository.getRecordsByUserId(user.gfId).flatMap { records =>
 
           val msg = records match {
             case Nil =>
-              s"@${user.username}, you haven't imported any data.\nPlease import you first gacha records using /start command."
+              s"${user.username}, you haven't imported any data.\nPlease import you first gacha records using /start command."
             case _ =>
               val itemsMap: Map[Int, Item] = ItemRepository.weapons ++ ItemRepository.heroes
               val fiveStarsCount = records.count(r => itemsMap(r.itemId.toInt).rarity == 5)
@@ -68,7 +68,7 @@ object ScenarioService {
                 (ItemRepository.banners.getOrElse(k.toInt, k), s"*${v.length.toString}* records")
               }.mkString("\n")
 
-              s"""@${user.username}, here is your report:
+              s"""${user.username}, here is your report:
                  |Total summons: *${records.length}*
                  |Crystals spent: *${records.length * 150}*
                  |5⭐ summons: *$fiveStarsCount*
@@ -114,7 +114,7 @@ object ScenarioService {
         case MainMenu.enBtn.text =>
           "Upon pressing Enter, your Gacha Records URL will be copied to your clipboard.\n\nPlease paste and send it to this bot in the next message."
         case MainMenu.ruBtn.text =>
-          "После нажатия клавиши Enter URL-адрес вашей истории круток будет скопирован в буфер обмена.\n\nСледующим сообщением пришлите мне вывод этой команды."
+          "После нажатия клавиши Enter URL-адрес вашей истории круток будет скопирован в буфер обмена.\n\nСледующим сообщением пришлите вывод этой команды обратно в чат с ботом."
       }
 
       for {
@@ -131,7 +131,7 @@ object ScenarioService {
       } yield ()
     }
 
-    override def download(chat: Chat, from: Option[models.User], magicLink: String): Scenario[F, Unit] = {
+    override def download(chat: Chat, from: User, magicLink: String): Scenario[F, Unit] = {
       import cats.effect.unsafe.implicits.global
       val url = magicLink.split("::")(0)
       val token = magicLink.split("::")(1)
@@ -150,7 +150,7 @@ object ScenarioService {
               }
 
             recordRepository.insertRecords(diffRecords, token) flatMap { _ =>
-              userRepository.saveUser(from.get.id, token, from.get.username.get) flatMap { _ =>
+              userRepository.saveUser(from.tgId.toLong, token, from.username) flatMap { _ =>
                 val count = diffRecords.length
 
                 val tuples: List[(Item, Long, Int)] = diffRecords.sortBy(_.time).zipWithIndex map { case (r, i) =>

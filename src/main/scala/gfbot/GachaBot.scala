@@ -1,13 +1,12 @@
 package gfbot
 
 import canoe.api._
-import canoe.models.User
 import canoe.syntax._
 import cats.Parallel
 import cats.effect.unsafe.implicits.global
 import cats.effect.{Async, IO}
 import fs2.Stream
-import gfbot.models.MainMenu
+import gfbot.models.{MainMenu, User}
 import gfbot.repositories.AppRepositories
 import gfbot.resources.AppResources
 import gfbot.services.{AppServices, ScenarioService}
@@ -17,8 +16,12 @@ class GachaBot(token: String, logger: Logger[IO]) {
   private def matchText(str1: String, str2: String): Boolean =
     str1.toLowerCase.trim == str2.toLowerCase.trim
 
-  private def expandFrom(f: User) = {
+  private def printCanoeUser(f: canoe.models.User) = {
     s"Name: ${f.firstName} ${f.lastName.getOrElse("???")} - @${f.username.getOrElse("???")} ID: ${f.id}"
+  }
+
+  private def canoeUserToUser(f: canoe.models.User) = {
+    User(null, f.id.toString, "unknown", f.username.getOrElse(f.firstName + "_" + f.id.toString))
   }
 
   def app[F[_] : Async : Parallel](repositories: AppRepositories[F], resources: AppResources[F]): F[Unit] = {
@@ -37,14 +40,15 @@ class GachaBot(token: String, logger: Logger[IO]) {
 
   private def polling[F[_] : Async : TelegramClient](scenario: ScenarioService[F]): Scenario[F, Unit] =
     Scenario.expect(textMessage).flatMap { msg =>
-      logger.use(s"Received message: ${msg.text} from user ${msg.from map expandFrom}").unsafeRunAndForget()
+      val user = canoeUserToUser(msg.from.get)
+      logger.use(s"Received message: ${msg.text} from user ${printCanoeUser(msg.from.get)}").unsafeRunAndForget()
       msg.text match {
         case language if matchText(language, MainMenu.cnBtn.text) || matchText(language, MainMenu.ruBtn.text) || matchText(language, MainMenu.enBtn.text) =>
           scenario.instructions(msg.chat, language)
         case magicLink if magicLink.startsWith("https://gf2-gacha-record.sunborngame.com") && magicLink.contains("::") =>
-          scenario.download(msg.chat, msg.from, magicLink)
+          scenario.download(msg.chat, user, magicLink)
         case command if command.startsWith("/me") =>
-          scenario.myInfo(msg.chat, msg.from)
+          scenario.myInfo(msg.chat, user)
         case command if command.startsWith("/global") =>
           scenario.globalInfo(msg.chat)
         case command if command.startsWith("/") =>
