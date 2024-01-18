@@ -2,13 +2,13 @@ package gfbot.services
 
 import canoe.api._
 import canoe.api.models.Keyboard
-import canoe.models
 import canoe.models.messages.TextMessage
 import canoe.models.outgoing.TextContent
 import canoe.models.{Chat, ParseMode}
 import cats.effect.{Async, IO}
 import cats.syntax.all._
 import gfbot.Logger
+import gfbot.models.Messages._
 import gfbot.models.{GachaRecord, MainMenu, User}
 import gfbot.repositories.{GachaRepository, Item, ItemRepository, RecordRepository, UserRepository}
 import org.typelevel.log4cats.LoggerFactory
@@ -19,7 +19,7 @@ import java.text.SimpleDateFormat
 trait ScenarioService[F[_]] {
   def start(chat: Chat): Scenario[F, Unit]
 
-  def myInfo(chat: Chat, from: User): Scenario[F, Unit]
+  def me(chat: Chat, from: User): Scenario[F, Unit]
 
   def globalInfo(chat: Chat): Scenario[F, Unit]
 
@@ -39,27 +39,22 @@ object ScenarioService {
     implicit val logging: LoggerFactory[IO] = Slf4jFactory.create[IO]
     val logger = new Logger[IO]
 
-    override def start(chat: Chat): Scenario[F, Unit] =
-      for {
-        _ <- Scenario.eval(chat.send(
-          TextContent(
-            "请选择语言\nChoose your language\nВыберите язык",
-            Some(ParseMode.Markdown)
-          ),
-          keyboard = MainMenu.keyboard
-        )
-        )
-      } yield ()
+    override def start(chat: Chat): Scenario[F, Unit] = Scenario.eval(
+      chat.send(chooseLanguage, keyboard = MainMenu.keyboard)
+    ).map(_ => ())
 
+    override def help(chat: Chat): Scenario[F, Unit] = Scenario.eval(
+      chat.send(helpMessage)
+    ).map(_ => ())
 
-    override def myInfo(chat: Chat, from: User): Scenario[F, Unit] = {
+    override def me(chat: Chat, from: User): Scenario[F, Unit] = {
       val result: F[TextMessage] = userRepository.getUser(from.tgId.toLong) flatMap { userOpt =>
         val user = userOpt.getOrElse(from)
         recordRepository.getRecordsByUserId(user.gfId).flatMap { records =>
 
           val msg = records match {
             case Nil =>
-              s"${user.username}, you haven't imported any data.\nPlease import you first gacha records using /start command."
+              userNotFound(user.username)
             case _ =>
               val itemsMap: Map[Int, Item] = ItemRepository.weapons ++ ItemRepository.heroes
               val fiveStarsCount = records.count(r => itemsMap(r.itemId.toInt).rarity == 5)
@@ -68,68 +63,24 @@ object ScenarioService {
                 (ItemRepository.banners.getOrElse(k.toInt, k), s"*${v.length.toString}* records")
               }.mkString("\n")
 
-              s"""${user.username}, here is your report:
-                 |Total summons: *${records.length}*
-                 |Crystals spent: *${records.length * 150}*
-                 |5⭐ summons: *$fiveStarsCount*
-                 |4⭐ summons: *$fourStarsCount*
-                 |
-                 |Distributed by banner:
-                 |$groupByBanner""".stripMargin
+              meReport(user.username, records.length, fiveStarsCount, fourStarsCount, groupByBanner)
           }
-
-          chat.send(TextContent(msg, Some(ParseMode.Markdown)))
+          chat.send(msg)
         } recoverWith { case ex: Exception =>
           import cats.effect.unsafe.implicits.global
           logger.error(ex).unsafeRunAndForget()
-          chat.send(TextContent("Oops! Something failed unexpectedly...", Some(ParseMode.Markdown)))
+          chat.send(errorMessage)
         }
       }
-      for {
-        _ <- Scenario.eval(result)
-      } yield ()
+
+      Scenario.eval(result).map(_ => ())
     }
 
-    override def help(chat: Chat): Scenario[F, Unit] = for {
-      _ <- Scenario.eval(chat.send(
-        TextContent("请发送 /start 命令\nPlease send /start\nПожалуйста, отправьте /start", Some(ParseMode.Markdown)))
-      )
+    override def instructions(chat: Chat, language: String): Scenario[F, Unit] = for {
+      _ <- Scenario.eval(chat.send(instruction1(language), keyboard = Keyboard.Remove))
+      _ <- Scenario.eval(chat.send(instruction2, keyboard = Keyboard.Remove))
+      _ <- Scenario.eval(chat.send(instruction3(language), keyboard = Keyboard.Remove))
     } yield ()
-
-    override def instructions(chat: Chat, language: String): Scenario[F, Unit] = {
-      val instructionsContent1 = language match {
-        case MainMenu.cnBtn.text =>
-          "你好指挥官！\n\n登录《少女前线2》PC端并打开游戏内的跃迁历史记录。\n\n打开Windows PowerShell，然后贴上并运行下述任一命令。通过Windows搜索搜寻「Windows PowerShell」即可找到该程序。"
-        case MainMenu.enBtn.text =>
-          "Hi, Commander!\n\nLaunch Girls Frontline 2 on PC and open your in-game Gacha Records.\n\nOpen Windows PowerShell, then paste and run the following command. You can find PowerShell by searching for \"Windows PowerShell\" within Windows Search."
-        case MainMenu.ruBtn.text =>
-          "Здравия желаю, главнокомандующий!\n\nЗапустите Girls Frontline 2 на ПК и откройте свою историю с крутками персонажей.\n\nОткройте Windows PowerShell, вставьте и запустите следующую команду. Вы можете найти PowerShell, если введете \"Windows PowerShell\" в меню поиска Windows."
-      }
-
-      val instructionsContent2 = "`[Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12; $wc = New-Object System.Net.WebClient; $wc.Encoding = [System.Text.Encoding]::UTF8; Invoke-Expression $wc.DownloadString(\"https://gist.githubusercontent.com/daxigua36/2001ad1e55cf0b5df46f879f981f0fde/raw/49ad885818edb691d6f859690569832d0b6e13f3/gf2_get_gacha_url.ps1\")`"
-
-      val instructionsContent3 = language match {
-        case MainMenu.cnBtn.text =>
-          "按下回车键后，扭蛋历史记录网址将被复制到剪贴板。\n\n请向我发送上一个命令的输出"
-        case MainMenu.enBtn.text =>
-          "Upon pressing Enter, your Gacha Records URL will be copied to your clipboard.\n\nPlease paste and send it to this bot in the next message."
-        case MainMenu.ruBtn.text =>
-          "После нажатия клавиши Enter URL-адрес вашей истории круток будет скопирован в буфер обмена.\n\nСледующим сообщением пришлите вывод этой команды обратно в чат с ботом."
-      }
-
-      for {
-        _ <- Scenario.eval(chat.send(
-          TextContent(instructionsContent1, Some(ParseMode.Markdown)),
-          keyboard = Keyboard.Remove)
-        )
-        _ <- Scenario.eval(chat.send(
-          TextContent(instructionsContent2, Some(ParseMode.Markdown)))
-        )
-        _ <- Scenario.eval(chat.send(
-          TextContent(instructionsContent3, Some(ParseMode.Markdown)))
-        )
-      } yield ()
-    }
 
     override def download(chat: Chat, from: User, magicLink: String): Scenario[F, Unit] = {
       import cats.effect.unsafe.implicits.global
@@ -151,16 +102,16 @@ object ScenarioService {
 
             recordRepository.insertRecords(diffRecords, token) flatMap { _ =>
               userRepository.saveUser(from.tgId.toLong, token, from.username) flatMap { _ =>
-                val count = diffRecords.length
+                val newRecordCount = diffRecords.length
 
                 val tuples: List[(Item, Long, Int)] = diffRecords.sortBy(_.time).zipWithIndex map { case (r, i) =>
                   val t = (ItemRepository.heroes.getOrElse(r.item, ItemRepository.weapons.getOrElse(r.item, Item(r.item.toString, "???", 0))), r.time, i + 1)
                   if (t._1.rarity == 0) logger.use(s"MISSING ITEM $r").unsafeRunAndForget()
                   t
                 }
-                logger.use(s"Imported Items $diffRecords").unsafeRunAndForget()
+                logger.use(s"Imported $newRecordCount items $diffRecords").unsafeRunAndForget()
 
-                val strings = tuples.filter(t => t._1.rarity > 3) map { case (item, time, index) =>
+                val highRankRecords = tuples.filter(t => t._1.rarity > 3) map { case (item, time, index) =>
                   val dateString = df.format(time * 1000)
                   val itemText = item.rarity match {
                     case 5 => s"⭐*${item.enName}*⭐ (${item.cnName})"
@@ -170,34 +121,22 @@ object ScenarioService {
                   s"$index.".padTo(4, ' ') + itemText + " - " + dateString
                 }
 
-                val msg = if (count > 0) {
-                  s"""We have imported *$count* total new records.
-                     |
-                     |New higher-rank records:
-                     |${strings.mkString("\n")}
-                     |
-                     |Explore global stats by sending /global
-                     |Explore personal stats by sending /me""".stripMargin
-                } else {
-                  s"""No new summons have been found.
-                     |
-                     |Explore global stats by sending /global
-                     |Explore personal stats by sending /me""".stripMargin
-                }
+                val msg = if (newRecordCount > 0)
+                  importResult(newRecordCount, highRankRecords)
+                else
+                  emptyImport
 
-                chat.send(TextContent(msg, Some(ParseMode.Markdown)))
+                chat.send(msg)
               }
             }
           }
         } recoverWith { case ex: Exception =>
           logger.error(ex).unsafeRunAndForget()
-          chat.send(TextContent("Oops! Something failed unexpectedly...", Some(ParseMode.Markdown)))
+          chat.send(errorMessage)
         }
       }
 
-      for {
-        _ <- Scenario.eval(result)
-      } yield ()
+      Scenario.eval(result).map(_ => ())
     }
 
     override def globalInfo(chat: Chat): Scenario[F, Unit] = {
@@ -211,25 +150,16 @@ object ScenarioService {
           val fiveStarsChance = BigDecimal(fiveStarsCount * 100) / recordCount
           val fourStarsChance = BigDecimal(fourStarsCount * 100) / recordCount
 
-          val msg =
-            s"""Total Users: *$userCount*
-               |Total Summons: *$recordCount*
-               |Crystals Spent: *${recordCount * 150}*
-               |
-               |5⭐ Summons: *$fiveStarsCount*
-               |4⭐ Summons: *$fourStarsCount*
-               |5⭐ Chance: *${fiveStarsChance.setScale(2, BigDecimal.RoundingMode.HALF_UP)}%*
-               |4⭐ Chance: *${fourStarsChance.setScale(2, BigDecimal.RoundingMode.HALF_UP)}%*""".stripMargin
-          chat.send(TextContent(msg, Some(ParseMode.Markdown)))
+          val msg = globalReport(userCount, recordCount, fiveStarsCount, fourStarsCount, fiveStarsChance, fourStarsChance)
+          chat.send(msg)
         }
       } recoverWith { case ex: Exception =>
         import cats.effect.unsafe.implicits.global
         logger.error(ex).unsafeRunAndForget()
-        chat.send(TextContent("Oops! Something failed unexpectedly...", Some(ParseMode.Markdown)))
+        chat.send(errorMessage)
       }
-      for {
-        _ <- Scenario.eval(result)
-      } yield ()
+
+      Scenario.eval(result).map(_ => ())
     }
   }
 }
