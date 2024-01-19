@@ -32,7 +32,7 @@ object Messages {
                fiveStarsCount: Int,
                fourStarsCount: Int,
                countByBanner: String): TextContent = TextContent(
-    s"""$username, here is your report:
+    s"""*$username*, here is your report:
        |Total summons: *$recordCount*
        |Crystals spent: *${recordCount * 150}*
        |5⭐ summons: *$fiveStarsCount*
@@ -106,8 +106,17 @@ object Messages {
        |New higher-rank records:
        |${highRankRecords.mkString("\n")}
        |
+       |Explore leaderboard by sending /leaderboard
        |Explore global stats by sending /global
        |Explore personal stats by sending /me""".stripMargin,
+    Some(ParseMode.Markdown)
+  )
+
+  def leadersMessage(username: String, userInfo: (Int, String, Int), highRankPlayers: List[String]): TextContent = TextContent(
+    s"""*$username*, you are currently in *${userInfo._1 + 1}* place with *${userInfo._3}* records:
+       |
+       |Top 5 players:
+       |${highRankPlayers.take(5).mkString("\n")}""".stripMargin,
     Some(ParseMode.Markdown)
   )
 }

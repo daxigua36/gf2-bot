@@ -10,7 +10,7 @@ import cats.syntax.all._
 import gfbot.Logger
 import gfbot.models.Messages._
 import gfbot.models.{GachaRecord, MainMenu, User}
-import gfbot.repositories.{GachaRepository, Item, ItemRepository, RecordRepository, UserRepository}
+import gfbot.repositories._
 import org.typelevel.log4cats.LoggerFactory
 import org.typelevel.log4cats.slf4j.Slf4jFactory
 
@@ -28,6 +28,8 @@ trait ScenarioService[F[_]] {
   def instructions(chat: Chat, language: String): Scenario[F, Unit]
 
   def download(chat: Chat, from: User, magicLink: String): Scenario[F, Unit]
+
+  def leaderboard(chat: Chat, from: User): Scenario[F, Unit]
 }
 
 object ScenarioService {
@@ -56,7 +58,7 @@ object ScenarioService {
             case Nil =>
               userNotFound(user.username)
             case _ =>
-              val itemsMap: Map[Int, Item] = ItemRepository.weapons ++ ItemRepository.heroes
+              val itemsMap: Map[Int, Item] = ItemRepository.getAllItems
               val fiveStarsCount = records.count(r => itemsMap(r.itemId.toInt).rarity == 5)
               val fourStarsCount = records.count(r => itemsMap(r.itemId.toInt).rarity == 4)
               val groupByBanner = records.groupBy(_.bannerId).map { case (k, v) =>
@@ -105,9 +107,10 @@ object ScenarioService {
                 val newRecordCount = diffRecords.length
 
                 val tuples: List[(Item, Long, Int)] = diffRecords.sortBy(_.time).zipWithIndex map { case (r, i) =>
-                  val t = (ItemRepository.heroes.getOrElse(r.item, ItemRepository.weapons.getOrElse(r.item, Item(r.item.toString, "???", 0))), r.time, i + 1)
-                  if (t._1.rarity == 0) logger.use(s"MISSING ITEM $r").unsafeRunAndForget()
-                  t
+                  val item = ItemRepository.getAllItems.getOrElse(r.item, Item(r.item.toString, "???", 0))
+                  val tuple = (item, r.time, i + 1)
+                  if (tuple._1.rarity == 0) logger.use(s"MISSING ITEM $r").unsafeRunAndForget()
+                  tuple
                 }
                 logger.use(s"Imported $newRecordCount items $diffRecords").unsafeRunAndForget()
 
@@ -144,13 +147,43 @@ object ScenarioService {
         userRepository.getAllUsers flatMap { users =>
           val recordCount = records.length
           val userCount = users.length
-          val itemsMap: Map[Int, Item] = ItemRepository.weapons ++ ItemRepository.heroes
+          val itemsMap: Map[Int, Item] = ItemRepository.getAllItems
           val fiveStarsCount = records.count(r => itemsMap(r.itemId.toInt).rarity == 5)
           val fourStarsCount = records.count(r => itemsMap(r.itemId.toInt).rarity == 4)
           val fiveStarsChance = BigDecimal(fiveStarsCount * 100) / recordCount
           val fourStarsChance = BigDecimal(fourStarsCount * 100) / recordCount
 
           val msg = globalReport(userCount, recordCount, fiveStarsCount, fourStarsCount, fiveStarsChance, fourStarsChance)
+          chat.send(msg)
+        }
+      } recoverWith { case ex: Exception =>
+        import cats.effect.unsafe.implicits.global
+        logger.error(ex).unsafeRunAndForget()
+        chat.send(errorMessage)
+      }
+
+      Scenario.eval(result).map(_ => ())
+    }
+
+    override def leaderboard(chat: Chat, from: User): Scenario[F, Unit] = {
+      val result = recordRepository.getAllRecords flatMap { records =>
+        userRepository.getAllUsers flatMap { users =>
+          val usersByCount = records
+            .groupBy(_.userId)
+            .toList
+            .sortBy(-_._2.length)
+            .zipWithIndex
+            .map { case ((userId, records), index) => (index, userId, records.length) }
+          val highRankPlayers = usersByCount map { case (index, userId, records) =>
+            s"${index + 1}. ${users.find(_.gfId == userId).get.username} - *$records* records"
+          }
+          val currentUserOpt = users.find(_.tgId == from.tgId)
+          val currentPlaceOpt = currentUserOpt.flatMap(u => usersByCount.find(_._2 == u.gfId))
+
+          val msg = if (currentUserOpt.isEmpty)
+            userNotFound(from.username)
+          else
+            leadersMessage(from.username, currentPlaceOpt.get, highRankPlayers)
           chat.send(msg)
         }
       } recoverWith { case ex: Exception =>
