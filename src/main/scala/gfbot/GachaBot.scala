@@ -48,9 +48,11 @@ class GachaBot(token: String, logger: Logger[IO]) {
         case magicLink if magicLink.startsWith("https://gf2-gacha-record.sunborngame.com") && magicLink.contains("::") =>
           scenario.download(msg.chat, user, magicLink)
         case command if command.startsWith("/me") =>
-          scenario.myInfo(msg.chat, user)
+          scenario.me(msg.chat, user)
         case command if command.startsWith("/global") =>
           scenario.globalInfo(msg.chat)
+        case command if command.startsWith("/leaderboard") =>
+          scenario.leaderboard(msg.chat, user)
         case command if command.startsWith("/") =>
           Scenario.done[F]
         case _ =>

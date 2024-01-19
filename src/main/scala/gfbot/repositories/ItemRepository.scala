@@ -73,4 +73,6 @@ object ItemRepository {
     1026 -> Item("Nagant", "纳甘", 4),
     1038 -> Item("Littara", "莉塔拉", 4),
   )
+
+  def getAllItems: Map[Int, Item] = weapons ++ heroes
 }

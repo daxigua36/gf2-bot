@@ -7,8 +7,9 @@ import gfbot.models.{GachaLogResponse, GachaRecord, PlayerId}
 import io.circe.parser.decode
 import org.http4s.circe._
 import org.http4s.client.Client
+import org.http4s.headers.`Content-Type`
 import org.http4s.implicits.http4sLiteralsSyntax
-import org.http4s.{EntityDecoder, Header, Method, Request, Uri}
+import org.http4s.{EntityDecoder, Header, MediaType, Method, Request, Uri}
 import org.typelevel.ci._
 
 import java.util.Base64
@@ -42,7 +43,11 @@ final private class GachaRepositoryImpl[F[_] : Async](private val httpClient: Cl
   private def singleRequest(uri: String, token: String, type_id: String, next: String) = {
     val url = Uri.fromString(s"$uri&next=$next").getOrElse(uri"localhost").withQueryParam("type_id", type_id)
     val postRequest = Request[F](method = Method.POST, uri = url)
-      .withHeaders(Header.Raw.apply(ci"Authorization", token))
+      .withHeaders(
+        Header.Raw.apply(ci"Authorization", token),
+        Header.Raw.apply(ci"X-Unity-Version", "2019.4.40f1"),
+        Header.Raw.apply(ci"User-Agent", "UnityPlayer/2019.4.40f1 (UnityWebRequest/1.0, libcurl/7.80.0-DEV)"),
+      ).withContentType(`Content-Type`.apply(MediaType.application.`x-www-form-urlencoded`))
 
     httpClient.expect[GachaLogResponse](postRequest)
   }
