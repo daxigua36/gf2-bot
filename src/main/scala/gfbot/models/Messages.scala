@@ -17,6 +17,11 @@ object Messages {
     Some(ParseMode.Markdown)
   )
 
+  def inProgress: TextContent = TextContent(
+    "Import in progress...",
+    Some(ParseMode.Markdown)
+  )
+
   def helpMessage: TextContent = TextContent(
     "请发送 /start 命令\nPlease send /start\nПожалуйста, отправьте /start",
     Some(ParseMode.Markdown)
@@ -33,10 +38,10 @@ object Messages {
                fourStarsCount: Int,
                countByBanner: String): TextContent = TextContent(
     s"""*$username*, here is your report:
-       |Total summons: *$recordCount*
-       |Crystals spent: *${recordCount * 150}*
-       |5⭐ summons: *$fiveStarsCount*
-       |4⭐ summons: *$fourStarsCount*
+       |Total Summons: *$recordCount*
+       |Crystals Spent: *${recordCount * 150}*
+       |5⭐ Summons: *$fiveStarsCount*
+       |4⭐ Summons: *$fourStarsCount*
        |
        |Distributed by banner:
        |$countByBanner""".stripMargin,
@@ -95,6 +100,7 @@ object Messages {
   def emptyImport: TextContent = TextContent(
     s"""No new summons have been found.
        |
+       |Explore leaderboard by sending /leaderboard
        |Explore global stats by sending /global
        |Explore personal stats by sending /me""".stripMargin,
     Some(ParseMode.Markdown)
@@ -113,7 +119,7 @@ object Messages {
   )
 
   def leadersMessage(username: String, userInfo: (Int, String, Int), highRankPlayers: List[String]): TextContent = TextContent(
-    s"""*$username*, you are currently in *${userInfo._1 + 1}* place with *${userInfo._3}* records:
+    s"""*$username*, you are currently in *${userInfo._1 + 1}* place with *${userInfo._3}* summons:
        |
        |Top 5 players:
        |${highRankPlayers.take(5).mkString("\n")}""".stripMargin,
