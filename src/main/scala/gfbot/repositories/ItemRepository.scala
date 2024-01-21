@@ -6,7 +6,7 @@ object ItemRepository {
     8001 -> "Weapon Banner B (SSR SPAS)",
     7001 -> "Event Banner B (Sabrina)",
     6001 -> "Event Banner A (Daiyan)",
-    5001 -> "Weapon Banner B (SSR QBZ-191)",
+    5001 -> "Weapon Banner B (SSR AK-Alfa)",
     4001 -> "Novice Banner",
     3001 -> "Event Banner B (Tololo)",
     2001 -> "Weapon Banner A (SSR Type 95)",

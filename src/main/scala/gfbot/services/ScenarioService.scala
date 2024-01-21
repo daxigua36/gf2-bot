@@ -90,7 +90,7 @@ object ScenarioService {
       val token = magicLink.split("::")(1)
       val df: SimpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
 
-      val result: F[TextMessage] = chat.send(TextContent("Import in progress...", Some(ParseMode.Markdown))) flatMap { _ =>
+      val result: F[TextMessage] = chat.send(inProgress) flatMap { _ =>
         gachaRepository.getAllRecords(url, token) flatMap { recordsInApi =>
           recordRepository.getRecordsByUserToken(token) flatMap { recordsInDb =>
 
@@ -175,7 +175,7 @@ object ScenarioService {
             .zipWithIndex
             .map { case ((userId, records), index) => (index, userId, records.length) }
           val highRankPlayers = usersByCount map { case (index, userId, records) =>
-            s"${index + 1}. ${users.find(_.gfId == userId).get.username} - *$records* records"
+            s"${index + 1}. ${users.find(_.gfId == userId).get.username} - *$records* summons"
           }
           val currentUserOpt = users.find(_.tgId == from.tgId)
           val currentPlaceOpt = currentUserOpt.flatMap(u => usersByCount.find(_._2 == u.gfId))
