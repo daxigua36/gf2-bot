@@ -75,7 +75,7 @@ object Messages {
       case MainMenu.enBtn.text =>
         "Hi, Commander!\n\nLaunch Girls Frontline 2 on PC and open your in-game Gacha Records.\n\nOpen Windows PowerShell, then paste and run the following command. You can find PowerShell by searching for \"Windows PowerShell\" within Windows Search."
       case MainMenu.ruBtn.text =>
-        "Здравия желаю, главнокомандующий!\n\nЗапустите Girls Frontline 2 на ПК и откройте свою историю с крутками персонажей.\n\nОткройте Windows PowerShell, вставьте и запустите следующую команду. Вы можете найти PowerShell, если введете \"Windows PowerShell\" в меню поиска Windows."
+        "Здравия желаю, командир!\n\nЗапустите Girls Frontline 2 на ПК и откройте свою историю с крутками персонажей.\n\nОткройте Windows PowerShell, вставьте и запустите следующую команду. Вы можете найти PowerShell, если введете \"Windows PowerShell\" в меню поиска Windows."
     }
     PhotoContent(image, msg, Some(ParseMode.Markdown))
   }

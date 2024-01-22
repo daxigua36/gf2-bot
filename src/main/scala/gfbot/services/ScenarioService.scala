@@ -62,7 +62,7 @@ object ScenarioService {
               val fiveStarsCount = records.count(r => itemsMap(r.itemId.toInt).rarity == 5)
               val fourStarsCount = records.count(r => itemsMap(r.itemId.toInt).rarity == 4)
               val groupByBanner = records.groupBy(_.bannerId).map { case (k, v) =>
-                (ItemRepository.banners.getOrElse(k.toInt, k), s"*${v.length.toString}* records")
+                (ItemRepository.banners.getOrElse(k.toInt, k), s"*${v.length.toString}* summons")
               }.mkString("\n")
 
               meReport(user.username, records.length, fiveStarsCount, fourStarsCount, groupByBanner)
