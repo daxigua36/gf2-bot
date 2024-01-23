@@ -3,8 +3,8 @@ package gfbot.repositories
 case class Item(enName: String, cnName: String, rarity: Int)
 object ItemRepository {
   val banners: Map[Int, String] = Map(
-    1111 -> "Weapon Banner A (SSR G36)",
-    2222 -> "Event Banner A (Centaureissi)",
+    10001 -> "Weapon Banner A (SSR G36)",
+    9001 -> "Event Banner A (Centaureissi)",
     8001 -> "Weapon Banner B (SSR SPAS)",
     7001 -> "Event Banner B (Sabrina)",
     6001 -> "Event Banner A (Daiyan)",
@@ -23,9 +23,7 @@ object ItemRepository {
     11020 -> Item("SSR Pecheneg", "光学幻境", 5),
     11044 -> Item("SSR QBZ-191", "金石奏", 5),
     11053 -> Item("SSR Type 95", "重弦", 5),
-    4 -> Item("SSR G36", "女仆准则", 5),
-    3 -> Item("G36", "格威尔36", 4),
-    2 -> Item("Stock G36", "旧式格威尔36", 3),
+    11056 -> Item("SSR G36", "女仆准则", 5),
     11007 -> Item("Hare Sword", "野兔", 4),
     11023 -> Item("Gloria", "格洛利娅", 4),
     11043 -> Item("QBZ-191", "一九一式", 4),
@@ -42,6 +40,7 @@ object ItemRepository {
     11049 -> Item("Nagant M1895", "纳甘左轮", 4),
     10362 -> Item("Stechkin", "斯捷奇金", 4),
     11052 -> Item("Type 95", "九五式", 4),
+    11055 -> Item("G36", "格威尔36", 4),
     11022 -> Item("Stock Hare", "旧式野兔", 3),
     11010 -> Item("Stock Gloria", "旧式格洛利娅", 3),
     11042 -> Item("Stock QBZ-191", "旧式一九一式", 3),
@@ -58,10 +57,11 @@ object ItemRepository {
     11048 -> Item("Stock Nagant M1895", "旧式纳甘左轮", 3),
     11008 -> Item("Stock Taurus Curve", "旧式金牛座曲线", 3),
     11051 -> Item("Stock Type 95", "旧式九五式", 3),
+    11054 -> Item("Stock G36", "旧式格威尔36", 3),
   )
 
   val heroes: Map[Int, Item] = Map(
-    1 -> Item("Centaureissi", "桑朵莱希", 5),
+    1028 -> Item("Centaureissi", "桑朵莱希", 5),
     1032 -> Item("Daiyan", "黛烟", 5),
     1029 -> Item("Sabrina", "塞布丽娜", 5),
     1025 -> Item("Tololo", "托洛洛", 5),

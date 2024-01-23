@@ -53,6 +53,8 @@ class GachaBot(token: String, logger: Logger[IO]) {
           scenario.globalInfo(msg.chat)
         case command if command.startsWith("/leaderboard") =>
           scenario.leaderboard(msg.chat, user)
+        case command if command.startsWith("/showscript") =>
+          scenario.showScript(msg.chat)
         case command if command.startsWith("/") =>
           Scenario.done[F]
         case _ =>
