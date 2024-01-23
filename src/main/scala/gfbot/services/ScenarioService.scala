@@ -30,6 +30,8 @@ trait ScenarioService[F[_]] {
   def download(chat: Chat, from: User, magicLink: String): Scenario[F, Unit]
 
   def leaderboard(chat: Chat, from: User): Scenario[F, Unit]
+
+  def showScript(chat: Chat): Scenario[F, Unit]
 }
 
 object ScenarioService {
@@ -48,6 +50,11 @@ object ScenarioService {
     override def help(chat: Chat): Scenario[F, Unit] = Scenario.eval(
       chat.send(helpMessage)
     ).map(_ => ())
+
+    override def showScript(chat: Chat): Scenario[F, Unit] = Scenario.eval(
+      chat.send(instruction2)
+    ).map(_ => ())
+
 
     override def me(chat: Chat, from: User): Scenario[F, Unit] = {
       val result: F[TextMessage] = userRepository.getUser(from.tgId.toLong) flatMap { userOpt =>
