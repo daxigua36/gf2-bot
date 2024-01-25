@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+message LanguageStringDataTable {
+    repeated LanguageStringData data = 1;
+}
+
+message LanguageStringData {
+    int64 id = 1;
+    string content = 2;
+}

@@ -38,12 +38,12 @@ object Dependencies {
 
   object Other {
     val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.2.3"
-    val s3aws = "com.amazonaws" % "aws-java-sdk-s3" % "1.12.122"
     val canoe = "org.augustjune" %% "canoe" % "0.6.0"
+    val scalapb = "com.thesamet.scalapb" %% "scalapb-runtime" % "0.11.13"
     val mongo = "io.github.kirill5k" %% "mongo4cats-core" % "0.6.17"
     val mongoCirce = "io.github.kirill5k" %% "mongo4cats-circe" % "0.6.17"
 
-    val all: Seq[ModuleID] = Seq(logbackClassic, s3aws, canoe, mongo, mongoCirce)
+    val all: Seq[ModuleID] = Seq(logbackClassic, scalapb, canoe, mongo, mongoCirce)
   }
 
 }
