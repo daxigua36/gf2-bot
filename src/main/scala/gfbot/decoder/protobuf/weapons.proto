@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+import "gfbot/decoder/protobuf/language_string_data.proto";
+
+message GunWeaponDataTable {
+  repeated GunWeaponData data = 1;
+}
+
+message GunWeaponData {
+  uint32 id = 1;
+  LanguageStringData name = 2;
+  LanguageStringData description = 3;
+  uint32 type = 4;
+  uint32 modelstype = 5;
+  uint32 element = 6;
+  string resCode = 7;
+  string resPath = 8;
+  string brand = 9;
+  int32 rank = 10;
+  uint32 elemenSkill = 11;
+  uint32 skill = 12;
+  uint32 buffSkill = 13;
+  repeated uint32 slot = 14;
+  uint32 expRate = 15;
+  uint32 weaponOfferExp = 16;
+  uint32 weaponNeedCash = 17;
+  uint32 defaultMaxlv = 18;
+  uint32 maxBreak = 19;
+  repeated uint32 soldDrop = 20;
+  map<uint32, uint32> soldGet = 21;
+  uint32 propertyId = 22;
+  map<uint32, uint32> unlockCost = 23;
+  uint32 privateSkill = 24;
+  uint32 capacityMax = 25;
+  uint32 weaponPolarityId = 26;
+  map<uint32, uint32> polarityCostRandom = 27;
+  map<uint32, uint32> polarityCostCustom = 28;
+  repeated uint32 advanceWeapon = 29;
+  uint32 characterId = 30;
+  uint32 modNum = 31;
+  repeated uint32 modTypeGroup = 32;
+  bool isHide = 33;
+  uint32 audio = 34;
+  int32 weaponTag = 35;
+  uint32 attackType = 36;
+  repeated uint32 weaponSkill = 37;
+}

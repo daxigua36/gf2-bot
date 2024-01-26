@@ -1,0 +1,80 @@
+syntax = "proto3";
+
+import "gfbot/decoder/protobuf/language_string_data.proto";
+
+message GunDataTable {
+  repeated GunData data = 1;
+}
+
+message GunData {
+  uint32 id = 1;
+  LanguageStringData name = 2;
+  LanguageStringData firstName = 3;
+  LanguageStringData secondName = 4;
+  LanguageStringData enName = 5;
+  LanguageStringData introduce = 6;
+  LanguageStringData dialogue = 7;
+  LanguageStringData extra = 8;
+  string code = 9;
+  int32 type = 10;
+  uint32 characterId = 11;
+  uint32 getAudio = 12;
+  int32 duty = 13;
+  uint32 secondDuty = 14;
+  int32 rank = 15;
+  uint32 roleTemplateId = 16;
+  uint32 coreItemId = 17;
+  LanguageStringData upgradeSpeech = 18;
+  uint32 skillNormalAttack = 19;
+  repeated uint32 skillActiveExtra = 20;
+  repeated uint32 skillTalentExtra = 21;
+  repeated int32 aiList = 22;
+  uint32 element = 23;
+  uint32 weaponType = 24;
+  repeated uint32 weaponPrivate = 25;
+  repeated uint32 weaponPrivateShow = 26;
+  uint32 weaponDefault = 27;
+  uint32 moveCode = 28;
+  map<uint32, uint32> soldGet1 = 29;
+  uint32 systemSwitch = 30;
+  bool useFakeAttack = 31;
+  uint32 camp = 32;
+  uint32 defaultGrade = 33;
+  uint32 unlockCost = 34;
+  uint32 grade = 35;
+  uint32 gunClass = 36;
+  string barrackCameraSetting = 37;
+  uint32 avatar = 38;
+  uint32 costumeId = 39;
+  repeated uint32 costumeReplace = 40;
+  uint32 propertyId = 41;
+  repeated uint32 barrackEffectId = 42;
+  uint32 weight = 43;
+  uint32 barrackAudioId = 44;
+  uint32 shieldType = 45;
+  uint32 maxGrade = 46;
+  uint32 shieldEffectId = 47;
+  uint32 baseSupply = 48;
+  repeated uint32 supplyTypeBanList = 49;
+  uint32 extraSkill = 50;
+  uint32 shieldBrokenEffectId = 51;
+  uint32 attackType = 52;
+  string gachaGetTimeline = 53;
+  repeated int32 beSuppressedConfig = 54;
+  uint32 shape = 55;
+  string shapeParam = 56;
+  string shapeIcon = 57;
+  uint32 shapeTerrain = 58;
+  uint32 idleType = 59;
+  uint32 displacement = 60;
+  bool isHide = 61;
+  string weakTag = 62;
+  string suppressGroup = 63;
+  uint32 unlockHint = 64;
+  repeated uint32 unlockDorm = 65;
+  int32 guardRadius = 66;
+  int32 guardRadiusShow = 67;
+  uint32 gachaGetAudio = 68;
+  uint32 gachaGetVoice = 69;
+  int32 weakWeaponTag = 70;
+}
