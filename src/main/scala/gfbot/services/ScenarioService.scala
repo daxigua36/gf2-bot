@@ -42,6 +42,7 @@ object ScenarioService {
                                          ): ScenarioService[F] = new ScenarioService[F] {
     implicit val logging: LoggerFactory[IO] = Slf4jFactory.create[IO]
     val logger = new Logger[IO]
+    val df: SimpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
 
     override def start(chat: Chat): Scenario[F, Unit] = Scenario.eval(
       chat.send(chooseLanguage, keyboard = MainMenu.keyboard)
@@ -55,24 +56,43 @@ object ScenarioService {
       chat.send(instruction2)
     ).map(_ => ())
 
+    private def bannerStat(records: List[Record]): String = {
+      val recordsByBannerType = records.groupBy(r => ItemRepository.banners(r.bannerId.toInt)._2)
+      val itemStub = Item("???", "???", 0)
+      recordsByBannerType.map { case (bannerType, bannerRecords) =>
+        val fiveStarSummons: List[(Int, Item, Any, Long)] = bannerRecords.sortBy(_.t).zipWithIndex.map { case (r, i) =>
+          val bannerName = ItemRepository.banners.getOrElse(r.bannerId.toInt, r.bannerId.toInt)
+          val item = ItemRepository.getAllItems.getOrElse(r.itemId.toInt, itemStub)
+          (i + 1, item, bannerName, r.t)
+        }.filter(_._2.rarity == 5).reverse :+ (0, itemStub, "", 0)
+        val list = fiveStarSummons.sliding(2).toList.map{ arr =>
+          val dateString = df.format(arr.head._4 * 1000)
+          s"- *${arr.head._2.enName}* (${arr.head._2.cnName}) - *${arr.head._1 - arr.last._1}* rolls - $dateString"
+        }
+        if (fiveStarSummons.length <= 1) "" else bannerType + list.mkString("\n")
+
+      }.filter(_.nonEmpty).mkString("\n")
+    }
+
 
     override def me(chat: Chat, from: User): Scenario[F, Unit] = {
+      val itemsMap: Map[Int, Item] = ItemRepository.getAllItems
       val result: F[TextMessage] = userRepository.getUser(from.tgId.toLong) flatMap { userOpt =>
         val user = userOpt.getOrElse(from)
         recordRepository.getRecordsByUserId(user.gfId).flatMap { records =>
-
           val msg = records match {
             case Nil =>
               userNotFound(user.username)
             case _ =>
-              val itemsMap: Map[Int, Item] = ItemRepository.getAllItems
               val fiveStarsCount = records.count(r => itemsMap(r.itemId.toInt).rarity == 5)
               val fourStarsCount = records.count(r => itemsMap(r.itemId.toInt).rarity == 4)
               val groupByBanner = records.groupBy(_.bannerId).map { case (k, v) =>
-                (ItemRepository.banners.getOrElse(k.toInt, k), s"*${v.length.toString}* summons")
+                (ItemRepository.banners.getOrElse(k.toInt, (k, "???"))._1, s"*${v.length.toString}* summons")
               }.mkString("\n")
 
-              meReport(user.username, records.length, fiveStarsCount, fourStarsCount, groupByBanner)
+              val fiveStarsSummons = bannerStat(records)
+
+              meReport(user.username, records.length, fiveStarsCount, fourStarsCount, groupByBanner, fiveStarsSummons)
           }
           chat.send(msg)
         } recoverWith { case ex: Exception =>
@@ -95,7 +115,6 @@ object ScenarioService {
       import cats.effect.unsafe.implicits.global
       val url = magicLink.split("::")(0)
       val token = magicLink.split("::")(1)
-      val df: SimpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
 
       val result: F[TextMessage] = chat.send(inProgress) flatMap { _ =>
         gachaRepository.getAllRecords(url, token) flatMap { recordsInApi =>
@@ -128,7 +147,7 @@ object ScenarioService {
                     case 4 => s"*${item.enName}* (${item.cnName})"
                     case _ => s"${item.enName}(${item.cnName})"
                   }
-                  s"$index.".padTo(4, ' ') + itemText + " - " + dateString
+                  "- " + itemText + " - " + dateString
                 }
 
                 val msg = if (newRecordCount > 0)

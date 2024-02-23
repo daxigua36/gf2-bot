@@ -14,5 +14,6 @@ lazy val root = (project in file("."))
       case "META-INF/native-image/org.mongodb/bson/native-image.properties" => MergeStrategy.last
       case "META-INF/io.netty.versions.properties" => MergeStrategy.last
       case x                                       => (assembly / assemblyMergeStrategy).value.apply(x)
-    }
+    },
+    assembly / mainClass := Some("gfbot.Main")
   )
