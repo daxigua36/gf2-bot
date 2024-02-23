@@ -2,20 +2,27 @@ package gfbot.repositories
 
 case class Item(enName: String, cnName: String, rarity: Int)
 object ItemRepository {
-  val banners: Map[Int, String] = Map(
-    10001 -> "Weapon Banner A (SSR G36)",
-    9001 -> "Event Banner A (Centaureissi)",
-    8001 -> "Weapon Banner B (SSR SPAS)",
-    7001 -> "Event Banner B (Sabrina)",
-    6001 -> "Event Banner A (Daiyan)",
-    5001 -> "Weapon Banner A (SSR Type 95)",
-    4001 -> "Novice Banner",
-    3001 -> "Event Banner B (Tololo)",
-    2001 -> "Weapon Banner B (SSR AK-Alfa)",
-    1001 -> "Standard Banner"
+  val banners: Map[Int, (String, String)] = Map(
+    14001 -> ("Weapon Banner A (SSR UMP9)", "Weapon banners:\n"),
+    13001 -> ("Event Banner A (Lenna)", "Character banners:\n"),
+    12001 -> ("Weapon Banner B (SSR QBZ-191)", "Weapon banners:\n"),
+    11001 -> ("Event Banner B (Qiongjiu)", "Character banners:\n"),
+    10001 -> ("Weapon Banner A (SSR G36)", "Weapon banners:\n"),
+    9001 -> ("Event Banner A (Centaureissi)", "Character banners:\n"),
+    8001 -> ("Weapon Banner B (SSR SPAS)", "Weapon banners:\n"),
+    7001 -> ("Event Banner B (Sabrina)", "Character banners:\n"),
+    6001 -> ("Event Banner A (Daiyan)", "Character banners:\n"),
+    5001 -> ("Weapon Banner A (SSR Type 95)", "Weapon banners:\n"),
+    4001 -> ("Novice Banner", "Novice banner:\n"),
+    3001 -> ("Event Banner B (Tololo)", "Character banners:\n"),
+    2001 -> ("Weapon Banner B (SSR AK-Alfa)", "Weapon banners:\n"),
+    1001 -> ("Standard Banner", "Standard banner:\n"),
   )
 
   private val weapons: Map[Int, Item] = Map(
+    10131 -> Item("Stock UMP9", "旧式通用冲锋枪9", 3),
+    10132 -> Item("UMP9", "通用冲锋枪9", 4),
+    10133 -> Item("SSR UMP9", "幼狮", 5),
     10331 -> Item("Stock Mosin Nagant", "旧式莫辛-纳甘", 3),
     10332 -> Item("Mosin Nagant", "莫辛-纳甘", 4),
     10333 -> Item("SSR Mosin Nagant", "斯摩希克", 5),
@@ -67,6 +74,7 @@ object ItemRepository {
     1001 -> Item("Charolic", "克罗丽科", 4),
     1008 -> Item("Nemesis", "纳美西丝", 4),
     1009 -> Item("Colphne", "寇尔芙", 4),
+    1013 -> Item("Lenna", "莱娜", 5),
     1015 -> Item("Vepley", "维普蕾", 5),
     1017 -> Item("Groza", "闪电", 4),
     1021 -> Item("Peritya", "佩里缇亚", 5),

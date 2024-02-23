@@ -36,7 +36,8 @@ object Messages {
                recordCount: Int,
                fiveStarsCount: Int,
                fourStarsCount: Int,
-               countByBanner: String): TextContent = TextContent(
+               countByBanner: String,
+               fiveStarsSummons: String): TextContent = TextContent(
     s"""*$username*, here is your report:
        |Total Summons: *$recordCount*
        |Crystals Spent: *${recordCount * 150}*
@@ -44,7 +45,10 @@ object Messages {
        |4⭐ Summons: *$fourStarsCount*
        |
        |Distributed by banner:
-       |$countByBanner""".stripMargin,
+       |$countByBanner
+       |
+       |List of 5⭐ summons:
+       |$fiveStarsSummons""".stripMargin,
     Some(ParseMode.Markdown)
   )
 
