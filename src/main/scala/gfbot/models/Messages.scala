@@ -85,7 +85,7 @@ object Messages {
   }
 
   def instruction2: TextContent = TextContent(
-    "`[Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12; $wc = New-Object System.Net.WebClient; $wc.Encoding = [System.Text.Encoding]::UTF8; Invoke-Expression $wc.DownloadString(\"https://gist.githubusercontent.com/daxigua36/2001ad1e55cf0b5df46f879f981f0fde/raw/49ad885818edb691d6f859690569832d0b6e13f3/gf2_get_gacha_url.ps1\")`",
+    "`[Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12; $wc = New-Object System.Net.WebClient; $wc.Encoding = [System.Text.Encoding]::UTF8; Invoke-Expression $wc.DownloadString(\"https://gist.githubusercontent.com/daxigua36/2001ad1e55cf0b5df46f879f981f0fde/raw/8141da38c7a2f5d3fd242df215e3a19ba82ecafc/gf2_get_gacha_url.ps1\")`",
     Some(ParseMode.Markdown)
   )
 
@@ -113,9 +113,6 @@ object Messages {
   def importResult(recordCount: Int, highRankRecords: List[String]): TextContent = TextContent(
     s"""We have imported *$recordCount* total new records.
        |
-       |New higher-rank records:
-       |${highRankRecords.mkString("\n")}
-       |
        |Explore leaderboard by sending /leaderboard
        |Explore global stats by sending /global
        |Explore personal stats by sending /me""".stripMargin,
@@ -126,7 +123,7 @@ object Messages {
     s"""*$username*, you are currently in *${userInfo._1 + 1}* place with *${userInfo._3}* summons:
        |
        |Top 5 players:
-       |${highRankPlayers.take(5).mkString("\n")}""".stripMargin,
+       |${highRankPlayers.take(5).mkString("\n")}""".stripMargin.replace("_", "\\_"),
     Some(ParseMode.Markdown)
   )
 }
