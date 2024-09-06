@@ -24,7 +24,7 @@ final private class GachaRepositoryImpl[F[_] : Async](private val httpClient: Cl
   implicit val gachaResponseEntityDecoder: EntityDecoder[F, GachaLogResponse] = jsonOf
 
   override def getAllRecords(uri: String, token: String): F[List[GachaRecord]] = {
-    val gachaTypes = List("1", "2", "3", "4", "5")
+    val gachaTypes = List("1", "2", "3", "4", "5", "8")
 
     val listOfFutures: List[F[List[GachaRecord]]] = gachaTypes.map(typeId => consumePagination(uri, token, typeId))
     listOfFutures.sequence.map(_.flatten.sortBy(_.time))

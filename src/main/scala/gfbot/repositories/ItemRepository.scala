@@ -3,6 +3,8 @@ package gfbot.repositories
 case class Item(enName: String, cnName: String, rarity: Int)
 object ItemRepository {
   val banners: Map[Int, (String, String)] = Map(
+    91001 -> ("Self-select Weapon Banner", "Weapon banners:\n"),
+    90001 -> ("Self-select Character Banner", "Character banners:\n"),
     46001 -> ("Weapon Banner B (SSR M1931)", "Weapon banners:\n"),
     45001 -> ("Event Banner B (Suomi)", "Character banners:\n"),
     44001 -> ("Weapon Banner A (SSR HK416)", "Weapon banners:\n"),
